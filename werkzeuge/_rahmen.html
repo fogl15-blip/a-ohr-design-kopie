@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><title>Rahmen</title>
+<style>html, body { margin: 0; background: #fff; } iframe { display: block; border: 0; }</style></head>
+<body>
+<!-- Werkzeug für Screenshots schmaler Breiten (Edge rendert ohne Fenster nicht schmaler als ~500 px):
+     /werkzeuge/_rahmen.html?seite=hoertest&w=390&h=844 -->
+<script>
+  var q = new URLSearchParams(location.search);
+  var f = document.createElement('iframe');
+  f.src = '/' + (q.get('seite') || '');
+  f.style.width = q.get('w') + 'px';
+  f.style.height = q.get('h') + 'px';
+  // Optional: Bedienung testen (aktion=menue klickt „Menü“, aktion=karte klickt „Karte anzeigen“ – ohne Google: Ziel wird about:blank)
+  f.onload = function () {
+    var d = f.contentDocument, a = q.get('aktion');
+    if (a === 'menue') d.querySelector('.menueknopf').click();
+    if (a === 'karte') {
+      d.querySelectorAll('iframe[data-src]').forEach(function (x) { x.dataset.src = 'about:blank'; });
+      var b = d.querySelector('.einbettung button');
+      if (b) b.click();
+    }
+  };
+  document.body.appendChild(f);
+</script>
+</body>
+</html>

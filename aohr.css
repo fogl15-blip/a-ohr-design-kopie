@@ -1,0 +1,766 @@
+/* =============================================================
+   A&Ohr – Neuauflage (14.10.2026)
+   Grund Sand, Kacheln Off-White, Rot als Leitfarbe dort, wo man
+   handelt (Anrufen, Schritte), Schwarz als ruhiger Abschluss.
+   Für Menschen, die gut lesen wollen: große Schrift, große
+   Klickflächen, keine Klappmenüs, keine Filter.
+   ============================================================= */
+
+/* Schrift lokal eingebettet (Inter 4.1, SIL OFL, siehe fonts/Inter-LICENSE.txt) */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/InterVariable-latin.woff2') format('woff2');
+}
+
+:root {
+  /* CI */
+  --rot:        #C8102E;
+  --rot-dunkel: #A30D25;
+  --schwarz:    #1C1C1A;
+  --weiss:      #FAFAF8;   /* Off-White: Kacheln */
+  --papier:     #FFFFFF;
+  --sand:       #F0EDE8;   /* Seitengrund */
+  --sand-2:     #E2DDD7;   /* Linien, Ränder */
+
+  /* Text (Kontrast auf Sand und Off-White mindestens 5:1) */
+  --text:   #1C1C1A;
+  --text-2: #3A3A37;
+  --text-3: #5E5E5A;
+
+  /* Formen */
+  --r-kachel: clamp(20px, 2.4vw, 32px);
+  --r-karte:  20px;
+  --r-bild:   20px;
+  --r-pille:  999px;
+  --schatten: 0 1px 2px rgba(28, 28, 26, .06), 0 10px 28px rgba(28, 28, 26, .09);
+
+  /* Raster */
+  --max:         1200px;
+  --rand:        clamp(18px, 4vw, 48px);   /* Innenabstand seitlich */
+  --kachel-rand: clamp(8px, 1vw, 14px);    /* Abstand Kachel – Fensterrand */
+  --seite:       calc(var(--max) + 2 * var(--rand));  /* gemeinsame Breite: Kopf, Kacheln, Fuß */
+  --abschnitt:   clamp(56px, 7vw, 104px);  /* Abstand oben/unten je Abschnitt */
+}
+
+/* ---------- Grundlagen ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html {
+  font-size: 112.5%;            /* 18 px Fließtext */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: 20px;
+}
+body {
+  margin: 0;
+  background: var(--sand);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; height: auto; }
+[hidden] { display: none !important; }
+h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; }
+:where(ul[class], ol[class], nav ul) { list-style: none; padding: 0; }
+.nw { white-space: nowrap; }
+a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: .22em; }
+button { font: inherit; }
+:focus-visible { outline: 3px solid var(--schwarz); outline-offset: 3px; border-radius: 6px; }
+.kachel--rot :focus-visible, .kachel--dunkel :focus-visible, .fuss :focus-visible { outline-color: #fff; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; }
+}
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Schrift ---------- */
+h1, h2, h3 {
+  color: var(--text);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  hyphens: auto;
+}
+h1 { font-size: clamp(2.2rem, 1.4rem + 3.2vw, 3.6rem); }
+h2 { font-size: clamp(1.65rem, 1.2rem + 1.9vw, 2.45rem); }
+h3 { font-size: clamp(1.2rem, 1.1rem + .4vw, 1.35rem); line-height: 1.25; letter-spacing: -0.01em; }
+p, li, dd { color: var(--text-2); }
+strong { color: var(--text); font-weight: 650; }
+.lead { font-size: clamp(1.1rem, 1rem + .45vw, 1.3rem); line-height: 1.55; color: var(--text-2); }
+.kenner {
+  color: var(--rot);
+  font-size: .9rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  margin-bottom: .7rem;
+}
+.klein { font-size: .9rem; color: var(--text-3); }
+
+/* ---------- Raster, Kacheln, Abschnitte ---------- */
+/* Ein Raster für alles: Kopf, Abschnitte, Kacheln und Fuß sind gleich breit und bündig */
+.rahmen {
+  width: calc(100% - 2 * var(--kachel-rand));
+  max-width: var(--seite);
+  margin-inline: auto;
+  padding-inline: var(--rand);
+}
+.kachel .rahmen, .fuss .rahmen, .standorte .rahmen { width: 100%; }
+.rahmen--schmal { max-width: calc(840px + 2 * var(--rand)); }
+.kachel {
+  width: calc(100% - 2 * var(--kachel-rand));
+  max-width: var(--seite);
+  margin: 0 auto var(--kachel-rand);
+  background: var(--weiss);
+  border-radius: var(--r-kachel);
+  padding-block: var(--abschnitt);
+}
+.kachel--rot    { background: var(--rot); color: #fff; }
+.kachel--dunkel { background: var(--schwarz); color: #fff; }
+.abschnitt { padding-block: var(--abschnitt); }
+.abschnitt--eng { padding-block: clamp(28px, 4vw, 48px); }
+.abschnitt__kopf { max-width: 780px; margin-bottom: clamp(28px, 4vw, 48px); }
+.abschnitt__kopf .lead { margin-top: 1rem; }
+.abschnitt__mehr { margin-top: clamp(24px, 3vw, 36px); }
+.stapel > * + * { margin-top: 1rem; }
+.mt { margin-top: clamp(16px, 2vw, 24px); }
+.ohne-oben { padding-top: 0; }
+
+/* ---------- Symbole ---------- */
+.i {
+  width: 1.25em; height: 1.25em; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ---------- Knöpfe und Links ---------- */
+.knopf {
+  display: inline-flex; align-items: center; justify-content: center; gap: .55em;
+  min-height: 56px;
+  padding: .7em 1.6em;
+  border: 2px solid transparent;
+  border-radius: var(--r-pille);
+  font-size: 1rem; font-weight: 650; line-height: 1.2; text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .15s, color .15s, border-color .15s;
+}
+.knopf--rot { background: var(--rot); color: #fff; }
+.knopf--rot:hover { background: var(--rot-dunkel); }
+.knopf--kontur { border-color: var(--schwarz); color: var(--schwarz); background: transparent; }
+.knopf--kontur:hover { background: var(--schwarz); color: #fff; }
+.knopf--hell { background: #fff; color: var(--schwarz); }
+.knopf--hell:hover { background: var(--sand); }
+.knopf--kontur-hell { border-color: #fff; color: #fff; background: transparent; }
+.knopf--kontur-hell:hover { background: #fff; color: var(--rot); }
+.textlink {
+  display: inline-flex; align-items: center; gap: .45em;
+  min-height: 44px;
+  color: var(--rot);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: .25em;
+}
+.textlink .i { transition: transform .15s; }
+.textlink:hover .i { transform: translateX(3px); }
+.kachel--rot .textlink, .kachel--dunkel .textlink { color: #fff; }
+
+/* ---------- Sprunglink, Kontaktzeile, Kopf ---------- */
+.skip {
+  position: absolute; left: 12px; top: -120px; z-index: 100;
+  padding: 12px 18px; border-radius: 12px;
+  background: var(--schwarz); color: #fff; font-weight: 650;
+}
+.skip:focus { top: 12px; }
+
+/* Kontaktzeile ganz oben: einziger Ort der Telefonnummern am Desktop (Entscheidung Nico: Variante B) */
+.kontaktzeile { display: none; }
+@media (min-width: 1025px) {
+  /* weiß über die volle Bildschirmbreite, Inhalt im Raster */
+  .kontaktzeile { display: block; font-size: .9rem; background: var(--weiss); border-bottom: 1px solid var(--sand-2); }
+  .kontaktzeile__innen {
+    display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap;
+    gap: 4px 28px; min-height: 52px;
+  }
+  .kontaktzeile__titel { margin-right: auto; color: var(--text-3); font-weight: 600; }
+  .kontaktzeile a {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+    color: var(--text); text-decoration: none;
+  }
+  .kontaktzeile a .i { color: var(--rot); }
+  .kontaktzeile a:hover { text-decoration: underline; }
+  .kontaktzeile__link { font-weight: 650; }
+}
+@media (min-width: 1025px) and (max-width: 1320px) {
+  .kontaktzeile__titel { display: none; }
+}
+
+.kopf__innen { display: flex; align-items: center; gap: 20px; min-height: 100px; }
+.kopf__logo { display: block; flex: none; }
+.kopf__logo img { width: 120px; }
+.hauptnav { margin-left: auto; }
+.hauptnav ul { display: flex; gap: 4px; }
+.hauptnav a {
+  display: flex; align-items: center; min-height: 48px; padding: 0 16px;
+  border-radius: var(--r-pille);
+  color: var(--text); font-weight: 600; text-decoration: none;
+}
+.hauptnav a:hover { background: var(--weiss); }
+.hauptnav a[aria-current="page"] { background: var(--weiss); color: var(--rot); }
+.kopf__kontakt { min-height: 48px; padding: .4em 1.3em; }
+.kopf__kontakt[aria-current="page"] { background: var(--schwarz); color: #fff; }
+.menueknopf { display: none; }
+
+.mobilmenue {
+  width: calc(100% - 2 * var(--kachel-rand));
+  max-width: var(--seite);
+  margin: 0 auto var(--kachel-rand);
+  padding: 8px var(--rand) 24px;
+  background: var(--weiss);
+  border-radius: var(--r-kachel);
+  box-shadow: var(--schatten);
+}
+.mobilmenue[hidden] { display: none; }
+.mobilmenue ul { display: grid; }
+.mobilmenue li + li { border-top: 1px solid var(--sand-2); }
+.mobilmenue a:not(.knopf) {
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 60px;
+  color: var(--text); font-size: 1.15rem; font-weight: 650; text-decoration: none;
+}
+.mobilmenue a:not(.knopf) .i { color: var(--text-3); }
+.mobilmenue a[aria-current="page"] { color: var(--rot); }
+
+@media (max-width: 1024px) {
+  .hauptnav, .kopf__kontakt { display: none; }
+  .kopf__innen { justify-content: space-between; min-height: 84px; }
+  .kopf__logo img { width: 98px; }
+  .menueknopf {
+    display: inline-flex; align-items: center; gap: 10px;
+    min-height: 52px; padding: 0 20px;
+    border: 2px solid var(--schwarz); border-radius: var(--r-pille);
+    background: transparent; color: var(--schwarz); font-weight: 650;
+    cursor: pointer;
+  }
+  .menueknopf .i-zu { display: none; }
+  .menueknopf[aria-expanded="true"] { background: var(--schwarz); color: #fff; }
+  .menueknopf[aria-expanded="true"] .i-menue { display: none; }
+  .menueknopf[aria-expanded="true"] .i-zu { display: block; }
+}
+@media (min-width: 1025px) {
+  .mobilmenue { display: none !important; }
+}
+
+/* ---------- Startseite: Hero ---------- */
+.held {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  min-height: 560px;
+  padding: 0;
+  overflow: hidden;
+}
+.held__text {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(36px, 4vw, 56px) var(--rand);   /* links bündig mit dem Logo */
+  background: var(--rot);
+  color: #fff;
+}
+/* Hero ohne Telefonnummern (die stehen oben bzw. in der Anrufleiste), dafür ein Knopf zum Hörtest */
+.held__knopf { margin-top: 1.8rem; align-self: flex-start; }
+.held__text .kenner, .held__text h1, .held__text .lead, .held__aufruf { color: #fff; }
+.held__text h1 { font-size: clamp(2.5rem, 1.5rem + 2.6vw, 3.6rem); }
+.held__text .lead { margin-top: 1rem; max-width: 34em; }
+.held__aufruf { margin: 1.6rem 0 .7rem; font-weight: 650; }
+.held__bild { position: relative; min-height: 100%; }
+.held__bild picture, .held__bild img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+}
+.held__bild img { object-fit: cover; object-position: 50% 28%; }
+.bildzeile {
+  position: absolute; left: 18px; bottom: 18px;
+  padding: 8px 16px;
+  border-radius: var(--r-pille);
+  background: rgba(250, 250, 248, .94);
+  color: var(--text); font-size: .85rem; font-weight: 600;
+}
+
+/* Telefonkarten (Hero, Anruf-Kachel, Anzeige) */
+.telkarten { display: grid; gap: 12px; grid-template-columns: 1fr; }
+.telkarte {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 14px;
+  padding: 14px 18px;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  background: #fff;
+  color: var(--text);
+  text-decoration: none;
+  transition: box-shadow .15s, transform .15s;
+}
+.telkarte:hover { box-shadow: var(--schatten); transform: translateY(-1px); }
+.telkarte__symbol {
+  grid-row: span 3;
+  display: grid; place-items: center;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--rot); color: #fff;
+}
+.telkarte__symbol .i { width: 22px; height: 22px; }
+.telkarte__ort { color: var(--text-3); font-size: .9rem; font-weight: 650; line-height: 1.3; }
+.telkarte__nr {
+  color: var(--rot);
+  font-size: clamp(1.05rem, .95rem + .55vw, 1.4rem);
+  font-weight: 750; letter-spacing: -0.01em; line-height: 1.25;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .held { grid-template-columns: 1fr; min-height: 0; }
+  .held__bild { order: -1; min-height: 0; aspect-ratio: 3 / 2; }
+  .held__text { background: var(--weiss); padding: clamp(28px, 6vw, 48px) var(--rand) clamp(32px, 6vw, 52px); }
+  .held__text .kenner { color: var(--rot); }
+  .held__text h1, .held__aufruf { color: var(--text); }
+  .held__text .lead { color: var(--text-2); }
+  .held__knopf { background: var(--rot); color: #fff; }
+  .bildzeile { left: 12px; bottom: 12px; padding: 6px 12px; font-size: .8rem; }
+}
+
+/* ---------- Hero-Kachel: oben Hero (rot + Foto), unten weißes Band mit den vier Versprechen ---------- */
+.held-kachel { padding: 0; overflow: hidden; }
+.held-kachel .versprechen__liste { padding: clamp(22px, 2.6vw, 34px) var(--rand); }
+@media (max-width: 1024px) {
+  .held-kachel .versprechen__liste { border-top: 1px solid var(--sand-2); }
+}
+
+/* ---------- Versprechen ---------- */
+.versprechen__liste {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 28px;
+}
+.versprechen__liste li { display: flex; align-items: flex-start; gap: 12px; line-height: 1.45; }
+.punkt {
+  display: grid; place-items: center; flex: none;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--rot); color: #fff;
+}
+.punkt .i { width: 18px; height: 18px; stroke-width: 3; }
+@media (max-width: 1024px) { .versprechen__liste { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px)  { .versprechen__liste { grid-template-columns: 1fr; } }
+
+/* ---------- Der Weg in Schritten (roter Faden) ---------- */
+.weg { --ring: var(--sand); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; position: relative; }
+.weg--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.weg--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.kachel .weg { --ring: var(--weiss); }
+.weg::before {
+  content: ""; position: absolute; top: 29px; left: 30px; right: calc(25% - 48px);
+  height: 3px; border-radius: 3px; background: var(--rot);
+}
+.weg.weg--5::before { right: calc(20% - 49px); }
+.weg.weg--3::before { right: calc(33.333% - 46px); }
+.weg--ohne-faden::before { display: none; }
+.weg li { position: relative; }
+.weg__nr {
+  position: relative; z-index: 1;
+  display: grid; place-items: center;
+  width: 60px; height: 60px; margin-bottom: 18px;
+  border-radius: 50%;
+  background: var(--rot); color: #fff;
+  font-size: 1.45rem; font-weight: 750;
+  box-shadow: 0 0 0 8px var(--ring);
+}
+.weg h3 { margin-bottom: .45rem; }
+@media (max-width: 1024px) {
+  .weg, .weg--5, .weg--3 { grid-template-columns: 1fr; gap: 0; }
+  .weg::before, .weg.weg--5::before, .weg.weg--3::before { top: 30px; bottom: 30px; left: 28.5px; right: auto; width: 3px; height: auto; }
+  .weg li { display: grid; grid-template-columns: 60px minmax(0, 1fr); column-gap: 20px; padding-bottom: 30px; }
+  .weg li:last-child { padding-bottom: 0; }
+  .weg__nr { grid-row: span 3; margin: 0; }
+  .weg h3 { padding-top: 14px; }
+}
+
+/* ---------- Karten ---------- */
+.karten { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.karten--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.karten--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.karten--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1024px) { .karten--3, .karten--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .karten--2, .karten--3, .karten--4 { grid-template-columns: 1fr; } }
+.karten > *, .geraete > *, .referenzen > *, .team > * { min-width: 0; }
+.karte, .hakenliste li { hyphens: auto; }
+.hakenliste li { overflow-wrap: anywhere; }
+.karte {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: clamp(22px, 2.4vw, 32px);
+  border-radius: var(--r-karte);
+  background: var(--weiss);
+  color: inherit; text-decoration: none;
+  transition: box-shadow .15s;
+}
+.kachel .karte { background: var(--sand); }
+a.karte:hover { box-shadow: var(--schatten); }
+a.karte:hover h3 { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .2em; }
+.karte .textlink { margin-top: auto; }
+.karte > .platzhalter { margin-top: 4px; }
+.symbol {
+  display: grid; place-items: center;
+  width: 56px; height: 56px; margin-bottom: 4px;
+  border-radius: 16px;
+  background: var(--sand); color: var(--text);
+}
+.kachel .symbol { background: var(--weiss); }
+.symbol .i { width: 28px; height: 28px; }
+.symbol--rot, .kachel .symbol--rot { background: var(--rot); color: #fff; }
+.etikett {
+  align-self: flex-start;
+  padding: 3px 12px;
+  border: 1.5px solid var(--rot); border-radius: var(--r-pille);
+  color: var(--rot); font-size: .8rem; font-weight: 700;
+}
+
+/* Hörgeräte-Karten (Startseite) */
+.geraete { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.geraet {
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--r-karte);
+  background: var(--sand);
+  color: inherit; text-decoration: none;
+  transition: box-shadow .15s;
+}
+.geraet img { width: 100%; aspect-ratio: 970 / 545; object-fit: contain; background: #fff; }
+.geraet__text { display: flex; flex: 1; flex-direction: column; gap: 8px; padding: 22px 24px 18px; }
+.geraet:hover { box-shadow: var(--schatten); }
+.geraet:hover h3 { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .2em; }
+.geraet .textlink { margin-top: auto; }
+@media (max-width: 900px) { .geraete { grid-template-columns: 1fr; max-width: 560px; } }
+
+/* ---------- Bild + Text ---------- */
+.zweiteilig {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 72px); align-items: center;
+}
+.zweiteilig__bild img, .zweiteilig__bild .platzhalter {
+  width: 100%; max-height: 560px;
+  aspect-ratio: 4 / 3; object-fit: cover;
+  border-radius: var(--r-bild);
+}
+.zweiteilig--gedreht .zweiteilig__bild { order: 2; }
+.zweiteilig__text .knopf { margin-top: 1.6rem; }
+@media (max-width: 900px) {
+  .zweiteilig { grid-template-columns: 1fr; }
+  .zweiteilig__bild, .zweiteilig--gedreht .zweiteilig__bild { order: -1; }
+}
+
+/* Häkchen-Liste */
+.hakenliste { display: grid; gap: 10px; margin-top: 1.2rem; }
+.hakenliste li { display: flex; align-items: flex-start; gap: 12px; }
+.hakenliste li::before {
+  content: ""; flex: none;
+  width: 28px; height: 28px; margin-top: 1px;
+  border-radius: 50%;
+  background: var(--haken-grund, var(--sand)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C8102E' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / 16px no-repeat;
+}
+.kachel .karte .hakenliste, .abschnitt .hakenliste { --haken-grund: var(--weiss); }
+
+/* ---------- Unterseiten: Seitenkopf ---------- */
+.seitenkopf { padding-block: clamp(40px, 6vw, 84px); }
+.seitenkopf__innen {
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+  gap: clamp(28px, 5vw, 64px); align-items: center;
+}
+.seitenkopf--ohne-bild .seitenkopf__innen { grid-template-columns: minmax(0, 1fr); }
+.seitenkopf--ohne-bild .seitenkopf__text { max-width: 900px; }
+.seitenkopf__text .lead { margin-top: 1.1rem; }
+.seitenkopf__text > .knopf, .sprungmarken { margin-top: 1.8rem; }
+.seitenkopf__bild { position: relative; }
+.seitenkopf__bild img, .seitenkopf__bild > .platzhalter {
+  width: 100%; max-height: 460px;
+  aspect-ratio: 4 / 3; object-fit: cover;
+  border-radius: var(--r-bild);
+}
+@media (max-width: 900px) { .seitenkopf__innen { grid-template-columns: 1fr; } }
+
+.sprungmarken { display: flex; flex-wrap: wrap; gap: 10px; }
+.sprungmarken a {
+  display: inline-flex; align-items: center; min-height: 48px; padding: 0 20px;
+  border-radius: var(--r-pille);
+  background: var(--sand);
+  color: var(--text); font-weight: 600; text-decoration: none;
+}
+.sprungmarken a:hover { background: var(--sand-2); }
+
+/* ---------- Hörgeräte: Bauformen ---------- */
+.bauform {
+  display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+  gap: clamp(24px, 4vw, 56px); align-items: center;
+  padding: clamp(20px, 3vw, 40px);
+  border-radius: var(--r-kachel);
+  background: var(--weiss);
+}
+.bauform + .bauform { margin-top: 16px; }
+.bauform__bild { overflow: hidden; border-radius: var(--r-bild); background: #fff; }
+.bauform__bild img { width: 100%; aspect-ratio: 970 / 545; object-fit: contain; }
+.bauform h3 { font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); margin-bottom: .8rem; }
+.bauform .knopf { margin-top: 1.6rem; }
+@media (max-width: 860px) { .bauform { grid-template-columns: 1fr; } }
+
+/* Logos (Hersteller, Referenzen) */
+.logoreihe { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.logoreihe li { display: grid; place-items: center; padding: 10px; border-radius: 16px; background: #fff; }
+.logoreihe img { width: 100%; max-width: 220px; aspect-ratio: 4 / 3; object-fit: contain; }
+@media (max-width: 640px) { .logoreihe { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.referenzen { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+.referenz {
+  display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 24px; align-items: start;
+  padding: clamp(20px, 2.4vw, 28px);
+  border-radius: var(--r-karte);
+  background: var(--weiss);
+}
+.referenz img { width: 112px; height: 84px; object-fit: contain; border-radius: 12px; background: #fff; }
+.referenz h3 { margin-bottom: .4rem; }
+@media (max-width: 420px) { .referenz { grid-template-columns: 1fr; } }
+
+/* Zitat */
+.zitat {
+  padding-left: clamp(18px, 2vw, 28px);
+  border-left: 4px solid var(--rot);
+  font-size: clamp(1.15rem, 1rem + .6vw, 1.45rem); font-weight: 600; line-height: 1.45;
+  color: var(--text);
+}
+
+/* ---------- Fragen ---------- */
+.fragen { display: grid; gap: 12px; }
+.fragen details { border-radius: 18px; background: var(--sand); }
+.fragen summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  min-height: 64px; padding: 16px 22px;
+  color: var(--text); font-size: 1.08rem; font-weight: 650;
+  list-style: none; cursor: pointer;
+}
+.fragen summary::-webkit-details-marker { display: none; }
+.fragen summary::after {
+  content: ""; flex: none;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231C1C1A' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E") center / 16px no-repeat;
+}
+.fragen details[open] summary::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231C1C1A' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+}
+.fragen details > :not(summary) { padding: 0 22px 20px; }
+.fragen details > * + :not(summary) { margin-top: -6px; }
+
+.hinweis {
+  padding: 20px 24px;
+  border-left: 4px solid var(--schwarz);
+  border-radius: 0 16px 16px 0;
+  background: var(--weiss);
+}
+
+/* ---------- Über uns ---------- */
+.team { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+.person { overflow: hidden; border-radius: var(--r-karte); background: var(--weiss); }
+.person img, .person > .platzhalter {
+  width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 20%;
+  border-radius: 0;
+}
+.person__text { padding: 18px 22px 22px; }
+.person__name { color: var(--text); font-size: 1.15rem; font-weight: 700; }
+.person__rolle { color: var(--text-3); }
+.person__text .platzhalter { margin-top: 10px; }
+.engagement .karte img {
+  width: 100%; aspect-ratio: 4 / 3; object-fit: contain;
+  border-radius: 14px; background: #fff;
+}
+.engagement .karte img.foto { object-fit: cover; }
+
+/* ---------- Kontakt ---------- */
+.kontaktwege { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 2rem; }
+.kontaktweg {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px; align-items: center;
+  padding: 16px 18px; border-radius: 18px; background: var(--sand);
+}
+.kontaktweg .symbol { grid-row: span 2; width: 48px; height: 48px; margin: 0; background: var(--weiss); }
+.kontaktweg .symbol .i { width: 24px; height: 24px; }
+.kontaktweg__art { color: var(--text-3); font-size: .9rem; font-weight: 650; }
+.kontaktweg a, .kontaktweg__wert { color: var(--text); font-weight: 700; text-decoration-color: var(--rot); }
+@media (max-width: 900px) { .kontaktwege { grid-template-columns: 1fr; } }
+
+.standorte {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--kachel-rand);
+  width: calc(100% - 2 * var(--kachel-rand));
+  max-width: var(--seite);
+  margin: 0 auto var(--kachel-rand);
+}
+.standorte > .kachel { width: auto; max-width: none; margin: 0; padding: clamp(28px, 4vw, 52px); }
+.standort > * + * { margin-top: 1.2rem; }
+.standort__adresse { font-size: 1.1rem; color: var(--text); font-style: normal; }
+.standort__tel {
+  display: inline-flex; align-items: center; gap: 12px;
+  color: var(--rot); font-size: clamp(1.4rem, 1.15rem + 1.1vw, 1.95rem); font-weight: 750;
+  text-decoration: none; white-space: nowrap;
+}
+.standort__tel:hover { text-decoration: underline; }
+/* Öffnungszeiten als Tabelle: Tag | Vormittag | Nachmittag – Ziffern stehen sauber untereinander */
+.zeiten { border-collapse: collapse; font-variant-numeric: tabular-nums; line-height: 1.35; }
+.zeiten th, .zeiten td { padding: 8px 0; text-align: left; vertical-align: top; white-space: nowrap; }
+.zeiten th { padding-right: 22px; color: var(--text); font-weight: 700; }
+.zeiten td { color: var(--text-2); }
+.zeiten td + td { padding-left: 18px; }
+.zeiten tr + tr > * { border-top: 1px solid var(--sand-2); }
+.zeiten__titel { margin: 1.1rem 0 .1rem; font-size: .85rem; font-weight: 700; letter-spacing: .02em; }
+.standort .zeiten { font-size: 1.1rem; }
+.knopfreihe { display: flex; flex-wrap: wrap; gap: 10px; }
+iframe.karte-frame { display: block; width: 100%; height: 320px; border: 0; border-radius: 16px; }
+@media (max-width: 900px) { .standorte { grid-template-columns: 1fr; } }
+@media (max-width: 420px) {
+  .standort .zeiten { font-size: .95rem; }
+  .zeiten th { padding-right: 14px; }
+  .zeiten td + td { padding-left: 12px; }
+}
+
+/* Zwei-Klick-Einbettung (Karte, Video) */
+.einbettung {
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 14px;
+  min-height: 220px; padding: 24px;
+  border-radius: 16px;
+  background: var(--sand);
+}
+.einbettung p { max-width: 36em; font-size: .95rem; }
+.einbettung--video { height: 100%; min-height: 0; align-items: center; text-align: center; border-radius: 0; background: var(--schwarz); }
+.einbettung--video p { color: #fff; }
+.video {
+  width: 100%; max-width: 860px; aspect-ratio: 16 / 9;
+  overflow: hidden; border-radius: var(--r-karte);
+  background: var(--schwarz);
+}
+.video iframe { display: block; width: 100%; height: 100%; border: 0; }
+
+/* ---------- Rote Anruf-Kachel (Ende der Unterseiten) ---------- */
+.anruf__innen {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: clamp(24px, 4vw, 56px); align-items: center;
+}
+.anruf h2, .anruf p, .anruf .kenner { color: #fff; }
+.anruf p { margin-top: 1rem; }
+.anruf p a { color: #fff; font-weight: 650; }
+.anruf .telkarten { grid-template-columns: 1fr; }
+.anruf__innen > div > p:first-child { margin-top: 0; }
+.anruf__kontakt { margin-top: 1.4rem; }
+@media (max-width: 900px) { .anruf__innen { grid-template-columns: 1fr; } }
+
+/* ---------- Anzeige (QR-Ziel) ---------- */
+.anzeige__innen {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  max-width: calc(900px + 2 * var(--rand));
+  text-align: center;
+}
+.anzeige__logo { width: 132px; }
+.anzeige h1, .anzeige .lead, .anzeige .kenner, .anzeige .held__aufruf { color: #fff; }
+.anzeige .lead { max-width: 34em; }
+.anzeige .held__aufruf { margin: .6rem 0 0; }
+.anzeige .telkarten { width: 100%; max-width: 520px; text-align: left; }
+
+/* ---------- Rechtstexte ---------- */
+.rechtstext { max-width: 780px; }
+.rechtstext h2 { margin: 2.2rem 0 .7rem; font-size: 1.35rem; letter-spacing: -0.01em; }
+.rechtstext h2:first-child { margin-top: 0; }
+.rechtstext p { margin-bottom: 1rem; overflow-wrap: anywhere; }
+.rechtstext a { color: var(--rot); }
+
+/* ---------- Platzhalter (vor dem Livegang ersetzen) ---------- */
+.platzhalter {
+  display: block;
+  padding: 16px 20px;
+  border: 2px dashed #9A6A00;
+  border-radius: 16px;
+  background: repeating-linear-gradient(-45deg, #FFF7DA 0 14px, #FFF0C4 14px 28px);
+  color: #3D2B00; font-size: .95rem; line-height: 1.5;
+}
+.platzhalter::before {
+  content: "Platzhalter"; display: block; margin-bottom: 4px;
+  color: #7A5400; font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+}
+.platzhalter--bild {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  aspect-ratio: 4 / 3; padding: 24px; text-align: center;
+}
+.platzhalter--bild::before { content: "Platzhalter Foto"; }
+.platzhalter--bild .i { width: 40px; height: 40px; margin-bottom: 10px; color: #7A5400; }
+.platzhalter--zeile { display: inline; padding: 2px 8px; border-radius: 8px; }
+.platzhalter--zeile::before { content: "Platzhalter: "; display: inline; }
+.pruefen {
+  display: inline-block; margin-left: 6px; padding: 2px 10px; vertical-align: middle;
+  border: 1.5px dashed #9A6A00; border-radius: var(--r-pille);
+  background: #FFF0C4; color: #5C3F00;
+  font-size: .78rem; font-weight: 750; letter-spacing: .02em; line-height: 1.6;
+}
+
+/* ---------- Fuß ---------- */
+.fuss {
+  width: calc(100% - 2 * var(--kachel-rand));
+  max-width: var(--seite);
+  margin: 0 auto var(--kachel-rand);
+  padding-block: clamp(48px, 6vw, 80px) 24px;
+  border-radius: var(--r-kachel);
+  background: var(--schwarz);
+  color: #fff;
+}
+.fuss__innen { display: grid; grid-template-columns: 1.15fr 1fr 1fr .85fr; gap: 36px; }
+.fuss h2 { margin-bottom: 12px; color: #fff; font-size: 1.1rem; letter-spacing: 0; }
+.fuss p, .fuss dd, .fuss dt, .fuss li { color: rgba(255, 255, 255, .86); }
+.fuss a { color: #fff; }
+.fuss__marke img { width: 132px; margin-bottom: 16px; }
+.fuss__tel { display: inline-flex; min-height: 44px; align-items: center; font-size: 1.2rem; font-weight: 700; text-decoration: none; }
+.fuss__tel:hover { text-decoration: underline; }
+.fuss .zeiten { font-size: .95rem; }
+.fuss .zeiten th { color: #fff; }
+.fuss .zeiten td { color: rgba(255, 255, 255, .86); }
+.fuss .zeiten tr + tr > * { border-top-color: rgba(255, 255, 255, .16); }
+.fuss .zeiten__titel { color: rgba(255, 255, 255, .7); }
+.fuss__route { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 6px; font-weight: 650; }
+.fuss__nav ul { display: grid; }
+.fuss__nav a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; }
+.fuss__nav a:hover { text-decoration: underline; }
+.fuss__unten {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px;
+  margin-top: 40px; padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, .25);
+  font-size: .9rem;
+}
+.fuss__unten span { color: rgba(255, 255, 255, .86); margin-right: auto; }
+.fuss__unten a { display: inline-flex; align-items: center; min-height: 44px; }
+@media (max-width: 1024px) { .fuss__innen { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px)  { .fuss__innen { grid-template-columns: 1fr; gap: 28px; } }
+
+/* ---------- Anrufleiste (Handy/Tablet, unten fest) ---------- */
+.anrufleiste { display: none; }
+@media (max-width: 1024px) {
+  .anrufleiste {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--sand-2);
+    background: rgba(240, 237, 232, .97);
+    box-shadow: 0 -6px 20px rgba(28, 28, 26, .08);
+  }
+  .anrufleiste .knopf { min-height: 54px; padding: .5em .7em; gap: .45em; }
+  body { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 359px) { .anrufleiste .i { display: none; } }
+
+/* ---------- Druck ---------- */
+@media print {
+  .kontaktzeile, .menueknopf, .mobilmenue, .anrufleiste, .einbettung { display: none !important; }
+  body { background: #fff; padding: 0; }
+  .kachel, .fuss { margin: 0; border-radius: 0; }
+}

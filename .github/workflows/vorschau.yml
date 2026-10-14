@@ -1,0 +1,46 @@
+# Vorschau der Design-Kopie über GitHub Pages (Nico, 14.10.2026: „von überall über Link“).
+# Veröffentlicht nur die Website-Dateien. „noindex“ wird NUR hier beim Veröffentlichen eingesetzt,
+# nicht in den Quelldateien – damit es nie versehentlich ins Original (a-ohr.de) wandert.
+name: Vorschau
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  vorschau:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Website zusammenstellen (mit noindex)
+        run: |
+          mkdir _site
+          cp *.html aohr.css aohr.js _site/
+          cp -r img fonts _site/
+          for f in _site/*.html; do
+            grep -q 'name="robots"' "$f" || sed -i '0,/<head>/s##<head>\n  <meta name="robots" content="noindex, nofollow">#' "$f"
+          done
+          grep -L 'name="robots"' _site/*.html && { echo "Seite ohne noindex gefunden"; exit 1; } || true
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

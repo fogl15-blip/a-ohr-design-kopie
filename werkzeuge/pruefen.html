@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><title>Prüfung</title></head>
+<body>
+<!-- Prüfstand (nur Werkzeug, nicht Teil der Website): lädt jede Seite in jeder Breite in einen iframe
+     und misst Überlauf, Höhe, kaputte Bilder, kleinste Schrift, Kontrast, fremde Anfragen, Platzhalter.
+     Aufruf über die Vorschau: http://localhost:8766/werkzeuge/pruefen.html?seiten=index,hoertest&breiten=360,1440
+     Ergebnis steht als JSON im pre-Element mit der id „ergebnis“ (für msedge --headless --dump-dom). -->
+<pre id="ergebnis">läuft</pre>
+<script>
+(async function () {
+  var q = new URLSearchParams(location.search);
+  var seiten = (q.get('seiten') || 'index').split(',');
+  var breiten = (q.get('breiten') || '360,375,768,1024,1440').split(',').map(Number);
+  var ergebnisse = [];
+
+  function lum(c) {
+    var m = c.match(/[\d.]+/g); if (!m) return null;
+    var a = m.length > 3 ? parseFloat(m[3]) : 1;
+    var rgb = m.slice(0, 3).map(function (v) {
+      v = v / 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return { l: 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2], a: a };
+  }
+  function grund(el, win) {
+    while (el && el.nodeType === 1) {
+      var cs = win.getComputedStyle(el);
+      if (cs.backgroundImage && cs.backgroundImage !== 'none' && !el.matches('body')) return null;
+      var b = lum(cs.backgroundColor);
+      if (b && b.a > 0.5) return b.l;
+      el = el.parentElement;
+    }
+    return lum('rgb(240,237,232)').l;
+  }
+
+  for (var s = 0; s < seiten.length; s++) {
+    for (var b = 0; b < breiten.length; b++) {
+      var seite = seiten[s], breite = breiten[b];
+      var f = document.createElement('iframe');
+      f.style.cssText = 'width:' + breite + 'px;height:9000px;border:0;display:block';
+      f.src = '/' + (seite === 'index' ? '' : seite) + '?t=' + Date.now();
+      document.body.appendChild(f);
+      await new Promise(function (r) { f.onload = r; });
+      await new Promise(function (r) { setTimeout(r, 900); });
+      var w = f.contentWindow, d = f.contentDocument, de = d.documentElement;
+      var r = { seite: seite, breite: breite, hoehe: Math.ceil(d.body.getBoundingClientRect().height), ueberlauf: de.scrollWidth - de.clientWidth };
+      // Elemente, die rechts hinausragen
+      r.zuBreit = [];
+      d.querySelectorAll('body *').forEach(function (el) {
+        if (r.zuBreit.length > 5) return;
+        var rc = el.getBoundingClientRect();
+        if (rc.width && rc.right > de.clientWidth + 1 && !el.closest('.anrufleiste[style*="none"]')) {
+          var cs = w.getComputedStyle(el);
+          if (cs.position !== 'fixed' && cs.visibility !== 'hidden' && cs.display !== 'none') r.zuBreit.push(el.tagName.toLowerCase() + '.' + (el.className.baseVal !== undefined ? '' : el.className) + ' (' + Math.round(rc.right) + ')');
+        }
+      });
+      // Inhalt, der innerhalb eines Kastens überläuft (z. B. nicht umbrechende Telefonnummern)
+      r.innen = [];
+      d.querySelectorAll('main *, footer *, header *').forEach(function (el) {
+        if (r.innen.length > 5 || el.offsetParent === null) return;
+        var cs = w.getComputedStyle(el);
+        if (cs.display === 'inline' || cs.overflowX !== 'visible' || el.matches('svg, svg *, iframe, img')) return;
+        if (el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0) {
+          r.innen.push(el.tagName.toLowerCase() + '.' + String(el.className).split(' ')[0] + ' (' + el.scrollWidth + '>' + el.clientWidth + ')');
+        }
+      });
+      // Bilder
+      r.bilderKaputt = [];
+      d.querySelectorAll('img').forEach(function (im) {
+        if (im.complete && im.naturalWidth === 0 && im.offsetParent !== null) r.bilderKaputt.push(im.getAttribute('src'));
+      });
+      // Schrift und Kontrast (nur sichtbare Textelemente, Platzhalter ausgenommen)
+      r.kleinsteSchrift = 99; r.kontrastFehler = [];
+      d.querySelectorAll('body *').forEach(function (el) {
+        if (!el.childNodes.length) return;
+        var hatText = Array.prototype.some.call(el.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim(); });
+        if (!hatText || el.offsetParent === null || el.closest('.platzhalter, .pruefen, .skip, .sr-only, svg')) return;
+        var cs = w.getComputedStyle(el);
+        var px = parseFloat(cs.fontSize);
+        if (px < r.kleinsteSchrift) r.kleinsteSchrift = px;
+        var fg = lum(cs.color), bg = grund(el, w);
+        if (!fg || bg === null) return;
+        var k = (Math.max(fg.l, bg) + 0.05) / (Math.min(fg.l, bg) + 0.05);
+        var gross = px >= 24 || (px >= 18.66 && parseInt(cs.fontWeight, 10) >= 700);
+        if (k < (gross ? 3 : 4.5) && r.kontrastFehler.length < 6) r.kontrastFehler.push(el.tagName.toLowerCase() + ' "' + el.textContent.trim().slice(0, 30) + '" ' + k.toFixed(2));
+      });
+      r.kleinsteSchrift = Math.round(r.kleinsteSchrift * 10) / 10;
+      // Fremde Anfragen
+      r.fremd = w.performance.getEntriesByType('resource').map(function (e) { return e.name; })
+        .filter(function (n) { return n.indexOf(location.origin) !== 0; });
+      // Zwei-Klick aktiv?
+      r.einbettungen = d.querySelectorAll('iframe[data-src]').length + '/' + d.querySelectorAll('.einbettung').length;
+      r.platzhalter = d.querySelectorAll('[data-platzhalter]').length;
+      r.pruefen = d.querySelectorAll('[data-pruefen]').length;
+      r.h1 = d.querySelectorAll('h1').length;
+      // tote interne Links
+      r.links = Array.prototype.map.call(d.querySelectorAll('a[href^="./"]'), function (a) { return a.getAttribute('href'); });
+      ergebnisse.push(r);
+      f.remove();
+    }
+  }
+  document.getElementById('ergebnis').textContent = JSON.stringify(ergebnisse);
+})();
+</script>
+</body>
+</html>

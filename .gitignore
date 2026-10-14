@@ -1,0 +1,23 @@
+*.zip
+Arbeitsdateien/
+.DS_Store
+._.DS_Store
+
+# Designvorlagen (nur Referenz)
+Designvorlagen/
+
+# Edge-Profil der Prüf-/Screenshot-Werkzeuge
+werkzeuge/_edge/
+
+# Interne Notizen – bleiben nur lokal (Repo ist öffentlich, Nico 14.10.2026)
+CLAUDE.md
+HANDOFF_Neuauflage.md
+NEUAUFLAGE.md
+LIESMICH.md
+DESIGN-AENDERUNGEN.md
+DESIGN-BEWERTUNG.md
+PROMPT_Designumsetzung.md
+Uebergabe/
+_Sicherung/
+Screenshots/
+.claude/
