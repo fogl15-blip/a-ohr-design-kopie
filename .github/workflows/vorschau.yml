@@ -34,7 +34,9 @@ jobs:
           for f in _site/*.html; do
             grep -q 'name="robots"' "$f" || sed -i '0,/<head>/s##<head>\n  <meta name="robots" content="noindex, nofollow">#' "$f"
           done
-          grep -L 'name="robots"' _site/*.html && { echo "Seite ohne noindex gefunden"; exit 1; } || true
+          fehlt=$(grep -L 'name="robots"' _site/*.html || true)
+          if [ -n "$fehlt" ]; then echo "Ohne noindex: $fehlt"; exit 1; fi
+          grep -c 'name="robots"' _site/*.html
 
       - uses: actions/configure-pages@v5
 
